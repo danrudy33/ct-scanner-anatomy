@@ -143,6 +143,6 @@ scanButton.addEventListener('click',requestScan);
 explodeButton.addEventListener('click',()=>requestApart(wantedApart()>.22?0:1));
 coverButton.addEventListener('click',()=>requestApart(wantedApart()>=.22?0:.22));
 document.querySelector('#theme').addEventListener('click',()=>{const next=document.body.dataset.theme==='dark'?'light':'dark';document.body.dataset.theme=next;document.querySelector('#theme').dataset.busy=String(next==='light');});
-for(const input of [rotationInput,pitchInput,modeInput])input.addEventListener('change',()=>{stop();describe();draw();});
+for(const input of [rotationInput,pitchInput,modeInput])input.addEventListener('change',()=>{if(armed||acquiring||phase==='reconstructing')stop();draw();});
 still.addEventListener('change',()=>{const target=wantedApart(),wasBusy=armed||acquiring||phase==='reconstructing';stop();if(frame)cancelAnimationFrame(frame);frame=0;last=0;if(still.matches){orbit=orbitTarget;openingRequested=0;apart=apartTarget=target;if(target>0){angle=Math.round(angle/360)*360;tablePosition=0;phase=terminalApart(target);}else phase=wasBusy?'paused':terminalApart(target);}draw();});
 paintMonitors();draw();

@@ -1,5 +1,14 @@
 # Validation scope — initial public prototype
 
+## PR #67 review follow-up — October 19
+
+- **32 public tests passed**, including new real-controller resting/active settings regressions and rejection of public development-only flags. Before the fix, those regressions reproduced 13 failures; existing active-interruption controls stayed green.
+- **24 focused real-browser cases passed** across both themes and desktop/390-pixel phone widths: idle/revealed/apart/completed statuses, actual acquisition interruption, computed 360 fan views / 180 back-projections, 22 component labels, fixed note spacing, no overflow and clean consoles.
+- Repeated hosted builds remain byte-identical and preserve the original packed scene hash. Only status logic, explanatory spacing and public build/debug handling changed; reconstruction and renderer/audit policy did not.
+- The original audit-body comparison **FAILED**, quick targeted continuity run, exit 1; other turn categories were skipped. This remains a blocker, separate from the already disclosed browser pixel warnings. The original gallery CI success used the local audit variant, not stock-policy acceptance. See [AUDIT-PROVENANCE.md](figures/danrudy33/ct-scanner/src/AUDIT-PROVENANCE.md).
+
+The initial-release receipts below are historical evidence for that original source, not replacement acceptance of this review blocker.
+
 ## Packaging checks actually executed
 
 - Six included numerical tests passed: model/readouts, analytic and independently sampled projections, fan-to-parallel rebinning and filtered back-projection.

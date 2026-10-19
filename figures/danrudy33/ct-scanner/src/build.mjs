@@ -14,7 +14,10 @@ import {sceneValues} from './motion.mjs';
 import {PHANTOM} from './reconstruction.mjs';
 import {HARDWARE,beamGeometry} from './beam-geometry.mjs';
 const HERE=dirname(fileURLToPath(import.meta.url));
-const argv=process.argv.slice(2), light=argv.includes('--light'), verify=argv.includes('--verify');
+const argv=process.argv.slice(2);
+for(const flag of argv)if(!['--light','--audit','--quick'].includes(flag))throw new Error(`Unsupported build option: ${flag}`);
+if(argv.includes('--quick')&&!argv.includes('--audit'))throw new Error('--quick requires --audit');
+const light=argv.includes('--light');
 const W=800,H=590, PX=80, Z=SCANNER.isoHeight, C=[0,0,Z], N=16, da=2*Math.PI/N;
 const D=derived(), F={o:C,a:[1,0,0],u:[0,1,0],v:[0,0,1]};
 const B=beamGeometry();
@@ -122,33 +125,28 @@ export const poses=()=>{
 export const follow=v=>({...v}); // figure sends already-resolved group values
 // Fit group planes against every sampled vertex. Dropping alternating vertices can
 // falsely separate a detector layer from the DAS while cutting their real full hulls.
-const out=T.build({statics:R.items,poses,verify,fullClouds:true});
+const out=T.build({statics:R.items,poses,fullClouds:true});
 A.settle(R,P);
 if(argv.includes('--audit')) {
   A.auditOrExit(R,P);
-  TA.orbitOrExit(T,R,P,{sweep:{at:o=>sceneValues({orbit:o,table:66}),from:0,to:360,frame:.3}, clips:[{name:'rotor',at:t=>sceneValues({orbit:40,rotor:t*90,table:66}),from:0,to:4,frame:1/60},{name:'explode',at:t=>sceneValues({orbit:20,apart:t/3,table:0}),from:0,to:3,frame:1/60}],quick:argv.includes('--quick'),only:argv.find(a=>a.startsWith('--only='))?.slice(7).split(',')??null});
+  TA.orbitOrExit(T,R,P,{sweep:{at:o=>sceneValues({orbit:o,table:66}),from:0,to:360,frame:.3}, clips:[{name:'rotor',at:t=>sceneValues({orbit:40,rotor:t*90,table:66}),from:0,to:4,frame:1/60},{name:'explode',at:t=>sceneValues({orbit:20,apart:t/3,table:0}),from:0,to:3,frame:1/60}],quick:argv.includes('--quick')});
 }
 const background=k.figureSvg({width:W,height:H,label:'A CT scanner on a museum display stand. White covers reveal an orange X-ray tube, teal detector, copper slip ring, and a blue patient table with a geometric phantom.',body:R.items.filter(i=>i.layer==='back').map(i=>i.svg)});
 const stage=`<div class="iso-stage iso-turn ct-stage" tabindex="0" role="group" aria-label="CT scanner. Drag sideways or use arrows to orbit, E opens the machine, Space starts or stops a scan.">${background}${out.layerSvg('scanner',{width:W,height:H})}</div>`;
 const controls=`<div class="ct-controls"><button id="scan" class="ct-swap" data-busy="false"><span data-when="idle">Scan phantom</span><span data-when="busy">Stop</span></button><button id="explode" class="ct-swap" aria-pressed="false" data-busy="false"><span data-when="idle">Explode</span><span data-when="busy">Assemble</span></button><button id="cover-toggle" aria-pressed="false">Reveal systems</button><button id="theme" class="ct-swap" data-busy="${light}"><span data-when="idle">Light theme</span><span data-when="busy">Dark theme</span></button><label>Rotation <select id="rotation"><option value=".25">0.25 s</option><option value=".33" selected>0.33 s</option><option value=".5">0.50 s</option></select></label><label>Pitch <input id="pitch" type="range" min=".5" max="1.5" step=".1" value="1"></label><label>Mode <select id="mode"><option value="axial">Axial reconstruction</option><option value="helical">Helical table feed</option></select></label></div><p id="explanation">Drag to inspect the scanner. Reveal systems removes the front cover; Explode opens its assemblies.</p><p id="expert"></p><p id="status" class="ct-status" aria-live="polite"></p>`;
-const monitors=`<section id="ct-reconstruction" class="ct-monitors" tabindex="-1" aria-label="Computed acquisition and reconstruction"><figure><canvas id="truth" width="96" height="96" aria-label="Geometric phantom reference"></canvas><figcaption>Known phantom</figcaption></figure><figure><canvas id="sino" width="181" height="360" aria-label="Computed fan-beam sinogram"></canvas><figcaption>Fan-beam sinogram</figcaption></figure><figure><canvas id="recon" width="96" height="96" aria-label="Computed filtered back-projection"></canvas><figcaption>Rebinned → Ram-Lak FBP</figcaption></figure></section><p class="ct-note">Teaching model: ideal monochromatic, noise-free 2D fan rays rebinned to parallel rays, then filtered back-projected. World X is the patient axis; one geometry unit is1cm. Amber guides are superimposed source-to-active-detector rays, not visible radiation or an occlusion simulation. Jaws project to40mm on the central ray; their rectangular taper narrows the illuminated footprint toward fan edges. The faceted13-module array approximates the ideal circular detector used by the numerical projector. Jaw, tube-window and centre-thin/edge-thick bowtie sizes are schematic, not vendor CAD or a calibrated spectrum. Not clinical helical/cone-beam reconstruction; greyscale is relative attenuation, not HU. Hardware uses enlarged, simplified internals; 13 visible detector modules stand for a much finer array with 64 axial rows. Motion is ${SLOW}× slower than real. No dose estimate.</p><div class="ct-key"><span>🟠 Tube / cathode / anode</span><span>🟢 Detector: grid → scintillator → photodiode → DAS</span><span>🟤 Slip ring: power + contactless data</span><span>🔵 Patient table</span><span class="ct-phantom-key"><i aria-hidden="true"></i>Imaging phantom — test object, not part of the scanner.</span></div>`;
+const monitors=`<section id="ct-reconstruction" class="ct-monitors" tabindex="-1" aria-label="Computed acquisition and reconstruction"><figure><canvas id="truth" width="96" height="96" aria-label="Geometric phantom reference"></canvas><figcaption>Known phantom</figcaption></figure><figure><canvas id="sino" width="181" height="360" aria-label="Computed fan-beam sinogram"></canvas><figcaption>Fan-beam sinogram</figcaption></figure><figure><canvas id="recon" width="96" height="96" aria-label="Computed filtered back-projection"></canvas><figcaption>Rebinned → Ram-Lak FBP</figcaption></figure></section><p class="ct-note">Teaching model: ideal monochromatic, noise-free 2D fan rays rebinned to parallel rays, then filtered back-projected. World X is the patient axis; one geometry unit is 1 cm. Amber guides are superimposed source-to-active-detector rays, not visible radiation or an occlusion simulation. Jaws project to 40 mm on the central ray; their rectangular taper narrows the illuminated footprint toward fan edges. The faceted 13-module array approximates the ideal circular detector used by the numerical projector. Jaw, tube-window and centre-thin/edge-thick bowtie sizes are schematic, not vendor CAD or a calibrated spectrum. Not clinical helical/cone-beam reconstruction; greyscale is relative attenuation, not HU. Hardware uses enlarged, simplified internals; 13 visible detector modules stand for a much finer array with 64 axial rows. Motion is ${SLOW}× slower than real. No dose estimate.</p><div class="ct-key"><span>🟠 Tube / cathode / anode</span><span>🟢 Detector: grid → scintillator → photodiode → DAS</span><span>🟤 Slip ring: power + contactless data</span><span>🔵 Patient table</span><span class="ct-phantom-key"><i aria-hidden="true"></i>Imaging phantom — test object, not part of the scanner.</span></div>`;
 const css=out.css+'\n'+readFileSync(join(HERE,'ct.css'),'utf8');
 const body=k.plateHtml({fig:'Fig CT·1',title:'Computed tomography',hint:'Drag to orbit · E explodes',readout:'ready',caption:'An X-ray tube and detector rotate around the patient. A computer turns the measured projections into a cross-sectional image.',body:`<style>${css}</style>${stage}`})+controls+'<p class="ct-recon-jump"><a id="view-reconstruction" href="#ct-reconstruction">View axial reconstruction ↓</a></p>'+monitors+'<p class="ct-warning">Educational prototype — visual artifacts may occur while rotating or opening the scanner. Automated rendering-continuity warnings remain unresolved. Axial reconstruction is computed; helical mode demonstrates table motion only. Not for clinical use.</p>';
 const strip=f=>readFileSync(join(HERE,f),'utf8').replace(/^import .*;\n/gm,'').replace(/^export /gm,'');
 const DATA={turn:out.data};
 const liveCode=strip('model.mjs')+'\n'+strip('beam-geometry.mjs')+'\n'+strip('motion.mjs')+'\n'+strip('reconstruction.mjs')+'\n'+strip('component-labels.mjs')+'\n'+readFileSync(join(HERE,'live.js'),'utf8').replace('__DATA__',JSON.stringify(DATA));
 const notice=readFileSync(join(HERE,'LICENSE.txt'),'utf8');
-const page=('<!--\n'+notice+'\n-->\n')+k.pageHtml({title:'CT Build — computed tomography',theme:light?'light':'dark',width:900,body,script:turnScript()+(verify?`window.__isoVerify=${JSON.stringify(out.verify)};\n`:'')+liveCode});
-const name=`ct-scanner${verify?'-verify':''}${light?'-light':''}.html`;
+const page=('<!--\n'+notice+'\n-->\n')+k.pageHtml({title:'CT Build — computed tomography',theme:light?'light':'dark',width:900,body,script:turnScript()+liveCode});
+const name=`ct-scanner${light?'-light':''}.html`;
 // Auditing is read-only with respect to delivered previews, even on failure.
 if(!argv.includes('--audit')) {
   writeFileSync(join(HERE,name),page);
   console.log(`wrote ${name} · ${out.report.parts} parts · ${Math.round(page.length/1024)} KB · data ${Math.round(JSON.stringify(out.data).length/1024)} KB · ${out.report.seconds.toFixed(2)}s`);
 } else console.log('audit run: preview files not overwritten');
-if(argv.includes('--states')) {
-  const states=[];
-  for(let a=7;a<360;a+=30) for(let o=5;o<360;o+=30) states.push(sceneValues({orbit:o,rotor:a,table:(o*7)%121}));
-  for(let e=0;e<=1.0001;e+=.05) for(let o=5;o<360;o+=30) states.push(sceneValues({orbit:o,apart:Math.min(1,e),table:0}));
-  writeFileSync(join(HERE,'states.json'),JSON.stringify(states)); console.log('check states',states.length);
-}
+
 export {out};

@@ -21,6 +21,8 @@ Rotate the scanner, reveal its systems, explode the tube and detector subassembl
 
 ## Important limitations
 
+**Gallery review:** [PR #67](https://github.com/wheresryan22/anatomy-community/pull/67) passed its initial automated run but has changes requested concerning the bundled audit and kit eligibility. The status/text/debug-option fixes are separate from that blocker. The unchanged stock audit body does not pass our bounded comparison; see [AUDIT-PROVENANCE.md](figures/danrudy33/ct-scanner/src/AUDIT-PROVENANCE.md). No stock-kit or gallery-acceptance claim is made.
+
 This is **not clinical software, a vendor CAD model, an HU/dose simulator or a fully visually validated renderer**. See [KNOWN-LIMITATIONS.md](KNOWN-LIMITATIONS.md).
 
 - Automatic rendering-continuity warnings remain unresolved. Visual artifacts may occur during rotation/opening. They have not been reclassified as harmless or cleared simply to publish.
