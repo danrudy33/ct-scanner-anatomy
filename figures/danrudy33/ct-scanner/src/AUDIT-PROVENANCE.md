@@ -6,6 +6,14 @@ After normalizing only the `./vendor-` module prefix back to `./`, these modules
 
 `vendor-turn-build.mjs` validates proposed cached separating planes against all supplied poses/vertices before using them. `vendor-turn.mjs` carries the disclosed CT renderer corrections. These are renderer/builder variants, not an unmodified upstream kit.
 
+## CT colour/material registrations and the generator reference
+
+The runtime also contains five additional material registrations, each with light/dark colour and shading ramps: `ct-shell` (white covers), `ct-tube` (orange tube), `ct-detector` (teal detector), `ct-table` (blue table) and `ct-phantom` (purple test object). These are display materials, not calibrated tissue/radiation properties. They are another concrete difference from the original runtime, separate from the renderer corrections and audit-policy changes.
+
+The `CT-MATERIALS-BEGIN` comment names `scripts/ct-materials.mjs`, a development helper used to generate those embedded definitions. That helper was not included in the gallery PR. **It is not a missing dependency of the submitted build:** the definitions are already present in the committed `vendor-turn.mjs`, and the normal build reads that file without running the generator or modifying any kit source. The comment records how the block was produced, not a command required to rebuild the submitted pages.
+
+Charlie correctly notes that the stock builder rejects a material name absent from `TURN.materials`. Therefore moving this figure to the original shared `.skill` is not just changing imports: these registrations must also be supported through an upstream-approved extension or replaced with supported kit materials. This compatibility requirement remains part of the maintainer decision below; documenting it does not establish approval or resolve the audit blocker.
+
 ## The reviewer is right about the audit-policy difference
 
 `vendor-turn-audit.mjs` differs in two substantive places:
@@ -25,4 +33,4 @@ No threshold was changed, checker failure hidden, geometry shrunk or acceptance 
 
 ## Decision still needed
 
-Before gallery acceptance, please confirm whether a reviewed renderer/audit variant is eligible at all, or whether the corrections must first be accepted into Anatomy and the figure moved to the shared kit. We are not treating documentation or a green variant-CI run as resolution of that decision. The geometry, real axial reconstruction and disclosed helical-motion-only scope are unchanged.
+Before gallery acceptance, please confirm whether a reviewed renderer/material/audit variant is eligible at all, or whether the corrections and material support must first be accepted into Anatomy and the figure moved to the shared kit. We are not treating documentation or a green variant-CI run as resolution of that decision. The geometry, real axial reconstruction and disclosed helical-motion-only scope are unchanged.
